@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_place_picker/google_maps_place_picker.dart';
 import 'package:google_maps_place_picker/providers/place_provider.dart';
@@ -45,6 +46,7 @@ class GoogleMapPlacePicker extends StatelessWidget {
     this.selectInitialPosition,
     this.language,
     this.forceSearchOnZoomChanged,
+    this.geolocator,
   }) : super(key: key);
 
   final LatLng initialTarget;
@@ -72,6 +74,8 @@ class GoogleMapPlacePicker extends StatelessWidget {
   final String language;
 
   final bool forceSearchOnZoomChanged;
+
+  final Geolocator geolocator;
 
   _searchByCameraLocation(PlaceProvider provider) async {
     // We don't want to search location again if camera location is changed by zooming in/out.
@@ -329,15 +333,98 @@ class GoogleMapPlacePicker extends StatelessWidget {
   }
 
   Widget _buildSelectionDetails(BuildContext context, PickResult result) {
+    var placeLocation = result.geometry.location;
+    var placeName = result.name;
+    var placeAdd = result.formattedAddress;
+    var placeCategory = result.types[0]; //this is inaccurate
+    print(placeName);
+    print(placeAdd);
+    print(placeCategory);
+
+    //using initialTarget for userPosition to calculate distance
+    //will not be adaptive to users moving while using app
+
+    var body = FutureProvider (
+        create: (context) => geolocator.distanceBetween(
+            initialTarget.latitude, initialTarget.longitude,
+            placeLocation.lat, placeLocation.lng),
+        child: Container(
+          height: 150,
+          width: 300,
+          child: Stack(
+            children: <Widget>[
+              //upper left information
+              Align(
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    width: 250,
+                    child: Column (
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        (placeName == null)? Text ("null") : Text (
+                          result.name,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        (placeAdd == null)? Text ("null") : Text (
+                          result.formattedAddress,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 10,
+                          ),
+                        )
+                      ],
+                    ),
+                  )
+              ),
+
+              //upper right information
+              Align(
+                alignment: Alignment.topRight,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    Consumer<double>
+                      (builder: (context, meters, widget) {
+                      return (meters != null)
+                          ?Text(
+                        '${(meters/1609.0).truncateToDouble()} miles',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      )
+                          :Container();
+                    },
+                    ),
+
+                    priceLevelToIcon(result.priceLevel), //MAKE THIS ALIGN PLS
+
+                    Text(
+                      "category",
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ],
+          ),
+        )
+    );
+
     return Container(
       margin: EdgeInsets.all(10),
       child: Column(
         children: <Widget>[
-          Text(
-            result.formattedAddress,
-            style: TextStyle(fontSize: 18),
-            textAlign: TextAlign.center,
-          ),
+          body, //THIS IS THE PLACE DETAILS
           SizedBox(height: 10),
           RaisedButton(
             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
@@ -355,6 +442,98 @@ class GoogleMapPlacePicker extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Widget priceLevelToIcon(PriceLevel priceLevel) {
+    double _size = 10;
+    //initially price is null so three gray dollar signs
+    var priceWidget = Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: <Widget>[
+        Icon(
+          Icons.attach_money,
+          color: Colors.black54,
+          size: _size,
+        ),
+        Icon(
+          Icons.attach_money,
+          color: Colors.black54,
+          size: _size,
+        ),
+        Icon(
+          Icons.attach_money,
+          color: Colors.black54,
+          size: _size,
+        )
+      ],
+    );
+
+    if (priceLevel == PriceLevel.free || priceLevel == PriceLevel.inexpensive) {
+      priceWidget = Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Icon(
+            Icons.attach_money,
+            color: Colors.black,
+            size: _size,
+          ),
+          Icon(
+            Icons.attach_money,
+            color: Colors.black54,
+            size: _size,
+          ),
+          Icon(
+            Icons.attach_money,
+            color: Colors.black54,
+            size: _size,
+          )
+        ],
+      );
+    } else if (priceLevel == PriceLevel.moderate || priceLevel == PriceLevel.expensive) {
+      priceWidget = Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Icon(
+            Icons.attach_money,
+            color: Colors.black,
+            size: _size,
+          ),
+          Icon(
+            Icons.attach_money,
+            color: Colors.black,
+            size: _size,
+          ),
+          Icon(
+            Icons.attach_money,
+            color: Colors.black54,
+            size: _size,
+          )
+        ],
+      );
+    } else if (priceLevel == PriceLevel.veryExpensive){
+      priceWidget = Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: <Widget>[
+          Icon(
+            Icons.attach_money,
+            color: Colors.black,
+            size: _size,
+          ),
+          Icon(
+            Icons.attach_money,
+            color: Colors.black,
+            size: _size,
+          ),
+          Icon(
+            Icons.attach_money,
+            color: Colors.black,
+            size: _size,
+          )
+        ],
+      );
+    }
+
+    return priceWidget;
   }
 
   Widget _buildMapIcons(BuildContext context) {

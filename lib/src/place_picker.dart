@@ -162,6 +162,7 @@ class _PlacePickerState extends State<PlacePicker> {
   GlobalKey appBarKey = GlobalKey();
   PlaceProvider provider;
   SearchBarController searchBarController = SearchBarController();
+  Geolocator geolocator = Geolocator();
 
   @override
   void initState() {
@@ -371,6 +372,7 @@ class _PlacePickerState extends State<PlacePicker> {
         searchBarController.reset();
       },
       onPlacePicked: widget.onPlacePicked,
+      geolocator: geolocator,
     );
   }
 }
