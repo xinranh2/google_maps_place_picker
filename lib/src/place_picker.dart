@@ -16,6 +16,7 @@ import 'dart:io' show Platform;
 
 enum PinState { Preparing, Idle, Dragging }
 enum SearchingState { Idle, Searching }
+enum MarkerState { Uninitialized, Moved, }
 
 class PlacePicker extends StatefulWidget {
   PlacePicker({
@@ -44,6 +45,7 @@ class PlacePicker extends StatefulWidget {
     this.myLocationButtonCooldown = 10,
     this.usePinPointingSearch = true,
     this.usePlaceDetailSearch = false,
+    this.useMapSelectSearch = false,
     this.autocompleteOffset,
     this.autocompleteRadius,
     this.autocompleteLanguage,
@@ -85,6 +87,7 @@ class PlacePicker extends StatefulWidget {
 
   final bool usePinPointingSearch;
   final bool usePlaceDetailSearch;
+  final bool useMapSelectSearch;
 
   final num autocompleteOffset;
   final num autocompleteRadius;
@@ -349,6 +352,7 @@ class _PlacePickerState extends State<PlacePicker> {
       enableMyLocationButton: widget.enableMyLocationButton,
       usePinPointingSearch: widget.usePinPointingSearch,
       usePlaceDetailSearch: widget.usePlaceDetailSearch,
+      useMapSelectSearch: widget.useMapSelectSearch,
       onMapCreated: widget.onMapCreated,
       selectInitialPosition: widget.selectInitialPosition,
       language: widget.autocompleteLanguage,

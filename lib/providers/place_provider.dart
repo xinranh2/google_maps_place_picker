@@ -79,6 +79,19 @@ class PlaceProvider extends ChangeNotifier {
     _currentCameraPosition = newPosition;
   }
 
+  Set<Marker> _markers;
+  Set<Marker> get markers => _markers;
+  set markers(Set<Marker> newMarkers) {
+    _markers = markers;
+  }
+
+  MarkerState _markerState;
+  MarkerState get markerState => _markerState;
+  set markerState(MarkerState newMarkerState) {
+    _markerState = newMarkerState;
+    notifyListeners();
+  }
+
   PickResult _selectedPlace;
   PickResult get selectedPlace => _selectedPlace;
   set selectedPlace(PickResult result) {
