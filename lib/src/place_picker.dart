@@ -16,7 +16,8 @@ import 'dart:io' show Platform;
 
 enum PinState { Preparing, Idle, Dragging }
 enum SearchingState { Idle, Searching }
-enum MarkerState { Uninitialized, Moved, }
+enum MarkerState { Uninitialized, Moved, Clicked }
+enum BottomScreenState { Nonexistent, Open, Closed }
 
 class PlacePicker extends StatefulWidget {
   PlacePicker({

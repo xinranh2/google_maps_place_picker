@@ -82,13 +82,20 @@ class PlaceProvider extends ChangeNotifier {
   Set<Marker> _markers;
   Set<Marker> get markers => _markers;
   set markers(Set<Marker> newMarkers) {
-    _markers = markers;
+    _markers = newMarkers;
   }
 
   MarkerState _markerState;
   MarkerState get markerState => _markerState;
   set markerState(MarkerState newMarkerState) {
     _markerState = newMarkerState;
+    notifyListeners();
+  }
+
+  BottomScreenState _bottomScreenState;
+  BottomScreenState get bottomScreenState => _bottomScreenState;
+  set bottomScreenState(BottomScreenState newBottomScreenState) {
+    _bottomScreenState = newBottomScreenState;
     notifyListeners();
   }
 

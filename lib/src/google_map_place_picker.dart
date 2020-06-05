@@ -156,6 +156,10 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
 
   final Geolocator geolocator;
 
+  Set<Marker> _markers = Set();
+
+  BottomScreenState _bottomState = BottomScreenState.Nonexistent;
+
   _searchByCameraLocation(PlaceProvider provider) async {
     // We don't want to search location again if camera location is changed by zooming in/out.
     bool hasZoomChanged = provider.cameraPosition != null &&
@@ -263,7 +267,7 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
   Widget build(BuildContext context) {
     var widgets = [
       _buildGoogleMap(context),
-      _buildFloatingCard(),
+      //_buildFloatingCard(),
       _buildMapIcons(context),
     ];
 
@@ -296,14 +300,17 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
               provider.mapController = controller;
               provider.setCameraPosition(null);
               provider.pinState = PinState.Idle;
-              provider.markers = Set();
+              provider.markers = _markers;
 
               // When select initialPosition set to true.
               if (selectInitialPosition && !useMapSelectSearch) {
                 provider.setCameraPosition(initialCameraPosition);
                 _searchByCameraLocation(provider);
+              } else if (useMapSelectSearch) {
+                provider.bottomScreenState = BottomScreenState.Nonexistent;
               }
             },
+            markers: _markers,
             onCameraIdle: () {
               if (provider.isAutoCompleteSearching) {
                 provider.isAutoCompleteSearching = false;
@@ -341,26 +348,55 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
             onCameraMove: (CameraPosition position) {
               provider.setCameraPosition(position);
             },
-            markers: provider.markers,
             onTap: (LatLng latlng) {
               if (!useMapSelectSearch) {
                 return;
               }
-              var marker = Marker(
+              Marker marker = Marker(
                 // This marker id can be anything that uniquely identifies each marker.
-                  markerId: MarkerId('1'),
+                  markerId: MarkerId((latlng.latitude + latlng.longitude).toString()),
                   position: latlng,
-                  icon: BitmapDescriptor.defaultMarker,
                   onTap: () {
+                    showModalBottomSheet(
+                        context: context,
+                        enableDrag: true,
+                        isDismissible: true,
+                        builder: (BuildContext context) {
+                          return ChangeNotifierProvider.value(
+                            value: provider,
+                            child: Container (
+                              child: _buildBottomSheet(context, provider),
+                            ),
+                          );
+                        }
+                    );
                   }
               );
 
+              setState(() {
+                _markers.clear();
+                _markers.add(marker);
+              });
+
               Set<Marker> markers = {marker};
               provider.markers = markers;
-              print('hello');
+              print(provider.markers.length);
 
               _searchByMapSelection(provider);
 
+              showModalBottomSheet(
+                  context: context,
+                  enableDrag: true,
+                  isDismissible: true,
+                  builder: (BuildContext context) {
+                    return ChangeNotifierProvider.value(
+                        value: provider,
+                        child: Container (
+                          child: _buildBottomSheet(context, provider),
+                        ),
+                    );
+                  }
+              );
             },
           );
         });
@@ -437,39 +473,7 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
     }
   }
 
-  void _handleMapSelect(LatLng latlng, BuildContext context, PlaceProvider provider) {
-    var marker = Marker(
-      // This marker id can be anything that uniquely identifies each marker.
-        markerId: MarkerId('1'),
-        position: latlng,
-        icon: BitmapDescriptor.defaultMarker,
-        onTap: () {
-          showModalBottomSheet(
-              context: context,
-              enableDrag: true,
-              builder: (builder) {
-                return Container (
-                  child: _buildBottomSheet(),
-                );
-              });
-        }
-    );
-
-    provider.markers = {marker};
-
-    _searchByMapSelection(provider);
-
-    showModalBottomSheet(
-        context: context,
-        enableDrag: true,
-        builder: (builder) {
-          return Container (
-            child: _buildBottomSheet(),
-          );
-        });
-  }
-
-  Widget _buildBottomSheet() {
+  Widget _buildBottomSheet(BuildContext context, PlaceProvider provider) {
     return Selector<PlaceProvider, Tuple3<PickResult, SearchingState, bool>>(
       selector: (_, provider) => Tuple3(provider.selectedPlace,
           provider.placeSearchingState, provider.isSearchBarFocused),
@@ -478,9 +482,8 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
             data.item3 == true) {
           return Container();
         } else {
-
           if (selectedPlaceWidgetBuilder == null) {
-            return _defaultPlaceWidgetBuilder(context, data.item1, data.item2);
+            return _defaultNotCardBuilder(context, data.item1, data.item2);
           } else {
             return Builder(
                 builder: (builderContext) => selectedPlaceWidgetBuilder(
@@ -489,6 +492,11 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
         }
       },
     );
+
+  }
+
+  void _handleBottomSheet(BuildContext context, PickResult data, SearchingState state) {
+
   }
 
   Widget _buildFloatingCard() {
@@ -528,6 +536,12 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
     );
   }
 
+  Widget _defaultNotCardBuilder(BuildContext context, PickResult data, SearchingState state) {
+    return state == SearchingState.Searching
+        ? _buildLoadingIndicator()
+        : _buildSelectionDetails(context, data);
+  }
+
   Widget _buildLoadingIndicator() {
     return Container(
       height: 48,
@@ -542,18 +556,31 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
   }
 
   Widget _buildSelectionDetails(BuildContext context, PickResult result) {
-    var placeLocation = result.geometry.location;
-    var placeName = result.name;
-    var placeAdd = result.formattedAddress;
-    var placeCategory = result.types[0]; //this is inaccurate
-    print(placeName);
-    print(placeAdd);
-    print(placeCategory);
+    var placeLocation;
+    var placeName;
+    var placeAdd;
+    var placeCategory;
+
+    if (result!= null) {
+      placeLocation = result.geometry.location;
+      placeName = result.name;
+      placeAdd = result.formattedAddress;
+      placeCategory = result.types[0]; //this is inaccurate
+      print(placeName);
+      print(placeAdd);
+      print(placeCategory);
+    } else {
+      print("result is null");
+    }
 
     //using initialTarget for userPosition to calculate distance
     //will not be adaptive to users moving while using app
 
-    var body = FutureProvider (
+    var body =
+        result == null
+        ? _buildLoadingIndicator()
+        :
+    FutureProvider (
         create: (context) => geolocator.distanceBetween(
             initialTarget.latitude, initialTarget.longitude,
             placeLocation.lat, placeLocation.lng),

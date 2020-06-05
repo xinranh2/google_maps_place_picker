@@ -84,6 +84,9 @@ class _HomePageState extends State<HomePage> {
                             Navigator.of(context).pop();
                             setState(() {});
                           },
+                          usePlaceDetailSearch: true,
+                          usePinPointingSearch: false,
+                          useMapSelectSearch: true,
                           //forceSearchOnZoomChanged: true,
                           //automaticallyImplyAppBarLeading: false,
                           //autocompleteLanguage: "ko",
