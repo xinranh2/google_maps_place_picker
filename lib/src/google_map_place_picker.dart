@@ -158,7 +158,7 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
 
   Set<Marker> _markers = Set();
 
-  BottomScreenState _bottomState = BottomScreenState.Nonexistent;
+
 
   _searchByCameraLocation(PlaceProvider provider) async {
     // We don't want to search location again if camera location is changed by zooming in/out.
@@ -267,13 +267,15 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
   Widget build(BuildContext context) {
     var widgets = [
       _buildGoogleMap(context),
-      //_buildFloatingCard(),
       _buildMapIcons(context),
     ];
 
     if (!useMapSelectSearch) {
       widgets.add(
         _buildPin()
+      );
+      widgets.add(
+        _buildFloatingCard()
       );
     }
 
@@ -301,20 +303,26 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
               provider.setCameraPosition(null);
               provider.pinState = PinState.Idle;
               provider.markers = _markers;
+              provider.bottomScreenState = BottomScreenState.Nonexistent;
 
               // When select initialPosition set to true.
               if (selectInitialPosition && !useMapSelectSearch) {
                 provider.setCameraPosition(initialCameraPosition);
                 _searchByCameraLocation(provider);
-              } else if (useMapSelectSearch) {
-                provider.bottomScreenState = BottomScreenState.Nonexistent;
               }
             },
-            markers: _markers,
+            markers: provider.markers,
             onCameraIdle: () {
               if (provider.isAutoCompleteSearching) {
                 provider.isAutoCompleteSearching = false;
                 provider.pinState = PinState.Idle;
+
+                //shows details for place and marker when searching place selected
+                if (useMapSelectSearch) {
+                  LatLng latLng = LatLng(provider.cameraPosition.target.latitude,
+                      provider.cameraPosition.target.longitude);
+                  _handleMapSelection(latLng, provider, context);
+                }
                 return;
               }
 
@@ -349,54 +357,14 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
               provider.setCameraPosition(position);
             },
             onTap: (LatLng latlng) {
-              if (!useMapSelectSearch) {
-                return;
-              }
-              Marker marker = Marker(
-                // This marker id can be anything that uniquely identifies each marker.
-                  markerId: MarkerId((latlng.latitude + latlng.longitude).toString()),
-                  position: latlng,
-                  onTap: () {
-                    showModalBottomSheet(
-                        context: context,
-                        enableDrag: true,
-                        isDismissible: true,
-                        builder: (BuildContext context) {
-                          return ChangeNotifierProvider.value(
-                            value: provider,
-                            child: Container (
-                              child: _buildBottomSheet(context, provider),
-                            ),
-                          );
-                        }
-                    );
-                  }
-              );
-
-              setState(() {
-                _markers.clear();
-                _markers.add(marker);
-              });
-
-              Set<Marker> markers = {marker};
-              provider.markers = markers;
-              print(provider.markers.length);
-
-              _searchByMapSelection(provider);
-
-              showModalBottomSheet(
-                  context: context,
-                  enableDrag: true,
-                  isDismissible: true,
-                  builder: (BuildContext context) {
-                    return ChangeNotifierProvider.value(
-                        value: provider,
-                        child: Container (
-                          child: _buildBottomSheet(context, provider),
-                        ),
-                    );
-                  }
-              );
+              provider.mapController.animateCamera(
+                  CameraUpdate.newCameraPosition(
+                  CameraPosition(
+                    target: latlng,
+                    zoom: 19.0,
+                  )
+              ));
+              _handleMapSelection(latlng, provider, context);
             },
           );
         });
@@ -473,6 +441,57 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
     }
   }
 
+  void _handleMapSelection(LatLng latLng, PlaceProvider provider, BuildContext context) {
+    if (!useMapSelectSearch) {
+      return;
+    }
+    Marker marker = Marker(
+      // This marker id can be anything that uniquely identifies each marker.
+        markerId: MarkerId((latLng.latitude + latLng.longitude).toString()),
+        position: latLng,
+        onTap: () {
+          provider.bottomScreenState = BottomScreenState.Open;
+          _createBottomSheet(context, provider);
+        }
+    );
+
+    setState(() {
+      _markers.clear();
+      _markers.add(marker);
+    });
+
+    Set<Marker> markers = {marker};
+    provider.markers = markers;
+    print(provider.markers.length);
+
+    _searchByMapSelection(provider);
+    _createBottomSheet(context, provider);
+
+  }
+
+  void _createBottomSheet(BuildContext context, PlaceProvider provider) {
+    provider.bottomScreenState = BottomScreenState.Open;
+    var bottomController = showModalBottomSheet(
+        context: context,
+        enableDrag: true,
+        isDismissible: true,
+        builder: (BuildContext context) {
+          return ChangeNotifierProvider.value(
+            value: provider,
+            child: Container (
+              height: MediaQuery.of(context).size.height * 0.35,
+              child: _buildBottomSheet(context, provider),
+            ),
+          );
+        }
+    );
+
+    bottomController.then((value) {
+      provider.bottomScreenState = BottomScreenState.Closed;
+      provider.mapController.animateCamera(CameraUpdate.zoomOut());
+    });
+  }
+
   Widget _buildBottomSheet(BuildContext context, PlaceProvider provider) {
     return Selector<PlaceProvider, Tuple3<PickResult, SearchingState, bool>>(
       selector: (_, provider) => Tuple3(provider.selectedPlace,
@@ -492,11 +511,6 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
         }
       },
     );
-
-  }
-
-  void _handleBottomSheet(BuildContext context, PickResult data, SearchingState state) {
-
   }
 
   Widget _buildFloatingCard() {
@@ -537,6 +551,7 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
   }
 
   Widget _defaultNotCardBuilder(BuildContext context, PickResult data, SearchingState state) {
+    print(state);
     return state == SearchingState.Searching
         ? _buildLoadingIndicator()
         : _buildSelectionDetails(context, data);
@@ -566,8 +581,6 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
       placeName = result.name;
       placeAdd = result.formattedAddress;
       placeCategory = result.types[0]; //this is inaccurate
-      print(placeName);
-      print(placeAdd);
       print(placeCategory);
     } else {
       print("result is null");
@@ -580,13 +593,12 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
         result == null
         ? _buildLoadingIndicator()
         :
-    FutureProvider (
+      FutureProvider (
         create: (context) => geolocator.distanceBetween(
             initialTarget.latitude, initialTarget.longitude,
             placeLocation.lat, placeLocation.lng),
         child: Container(
-          height: 150,
-          width: 300,
+          padding: EdgeInsets.symmetric(vertical: 11, horizontal: 11),
           child: Stack(
             children: <Widget>[
               //upper left information
@@ -627,18 +639,17 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
                       (builder: (context, meters, widget) {
                       return (meters != null)
                           ?Text(
-                        '${(meters/1609.0).truncateToDouble()} miles',
+                        '${(meters/1609.0).toStringAsFixed(2)} miles',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                         ),
-                      )
-                          :Container();
+                      ) : Container();
                     },
                     ),
 
-                    priceLevelToIcon(result.priceLevel), //MAKE THIS ALIGN PLS
+                    priceLevelToIcon(result.priceLevel), //ask tony to make these icons?
 
                     Text(
                       "category",
@@ -661,7 +672,7 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
       child: Column(
         children: <Widget>[
           body, //THIS IS THE PLACE DETAILS
-          SizedBox(height: 10),
+          SizedBox(height: 15),
           RaisedButton(
             padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
             child: Text(

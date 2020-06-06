@@ -301,6 +301,7 @@ class _PlacePickerState extends State<PlacePicker> {
         ),
       ),
     );
+
   }
 
   _moveToCurrentPosition() async {

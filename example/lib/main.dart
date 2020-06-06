@@ -82,6 +82,7 @@ class _HomePageState extends State<HomePage> {
                           onPlacePicked: (result) {
                             selectedPlace = result;
                             Navigator.of(context).pop();
+                            //context is the bottomsheet when mapselection is true
                             setState(() {});
                           },
                           usePlaceDetailSearch: true,
