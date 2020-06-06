@@ -598,7 +598,6 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
             initialTarget.latitude, initialTarget.longitude,
             placeLocation.lat, placeLocation.lng),
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 11, horizontal: 11),
           child: Stack(
             children: <Widget>[
               //upper left information
@@ -614,14 +613,17 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
                           style: TextStyle(
                             color: Colors.black,
                             fontWeight: FontWeight.bold,
-                            fontSize: 20,
+                            fontSize: 17,
                           ),
                         ),
+
+                        SizedBox(height: 2),
+
                         (placeAdd == null)? Text ("null") : Text (
                           result.formattedAddress,
                           style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 10,
+                            color: Colors.black87,
+                            fontSize: 14,
                           ),
                         )
                       ],
@@ -672,19 +674,26 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
     );
 
     return Container(
-      margin: EdgeInsets.all(10),
+      margin: EdgeInsets.fromLTRB(22, 37, 22, 37),
       child: Column(
         children: <Widget>[
           body, //THIS IS THE PLACE DETAILS
-          SizedBox(height: 15),
+          SizedBox(height: 50),
           RaisedButton(
-            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+            color: Color(0xFFF7931D),
+            padding: EdgeInsets.symmetric(
+                vertical: 18.0,
+                horizontal: 54.0
+            ),
             child: Text(
-              "Select here",
-              style: TextStyle(fontSize: 16),
+              "choose location",
+              style: TextStyle(
+                  fontSize: 16,
+                color: Colors.white,
+              ),
             ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4.0),
+              borderRadius: BorderRadius.circular(20.0),
             ),
             onPressed: () {
               onPlacePicked(result);

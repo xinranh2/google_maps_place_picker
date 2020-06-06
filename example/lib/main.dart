@@ -88,6 +88,7 @@ class _HomePageState extends State<HomePage> {
                           usePlaceDetailSearch: true,
                           usePinPointingSearch: false,
                           useMapSelectSearch: true,
+                          automaticallyImplyAppBarLeading: false,
                           //forceSearchOnZoomChanged: true,
                           //automaticallyImplyAppBarLeading: false,
                           //autocompleteLanguage: "ko",
