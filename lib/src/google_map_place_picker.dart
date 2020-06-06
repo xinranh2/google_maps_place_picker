@@ -158,7 +158,7 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
 
   Set<Marker> _markers = Set();
 
-
+  double milesBetween = 0;
 
   _searchByCameraLocation(PlaceProvider provider) async {
     // We don't want to search location again if camera location is changed by zooming in/out.
@@ -637,6 +637,10 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
                   children: <Widget>[
                     Consumer<double>
                       (builder: (context, meters, widget) {
+                        if (meters != null) {
+                          result.setDistance(double.parse((meters / 1609.0)
+                              .toStringAsFixed(2)));
+                        }
                       return (meters != null)
                           ?Text(
                         '${(meters/1609.0).toStringAsFixed(2)} miles',

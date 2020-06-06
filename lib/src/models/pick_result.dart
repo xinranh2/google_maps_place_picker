@@ -51,6 +51,7 @@ class PickResult {
   final num utcOffset;
   final String website;
   final List<Review> reviews;
+  double distanceFromUser = 0;
 
   factory PickResult.fromGeocodingResult(GeocodingResult result) {
     return PickResult(
@@ -87,5 +88,9 @@ class PickResult {
       website: result.website,
       reviews: result.reviews,
     );
+  }
+
+  void setDistance(double distance) {
+    distanceFromUser = distance;
   }
 }
