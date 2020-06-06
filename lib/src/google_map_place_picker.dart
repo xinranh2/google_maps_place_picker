@@ -472,18 +472,22 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
   void _createBottomSheet(BuildContext context, PlaceProvider provider) {
     provider.bottomScreenState = BottomScreenState.Open;
     var bottomController = showModalBottomSheet(
+        isScrollControlled: true,
         context: context,
         enableDrag: true,
-        isDismissible: true,
         builder: (BuildContext context) {
           return ChangeNotifierProvider.value(
             value: provider,
-            child: Container (
-              height: MediaQuery.of(context).size.height * 0.35,
-              child: _buildBottomSheet(context, provider),
-            ),
+            child: Wrap(
+              children: <Widget>[
+                Container (
+                  height: MediaQuery.of(context).size.height * 0.35,
+                  child: _buildBottomSheet(context, provider),
+                ),
+              ],
+            )
           );
-        }
+        },
     );
 
     bottomController.then((value) {
@@ -674,7 +678,7 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
     );
 
     return Container(
-      margin: EdgeInsets.fromLTRB(22, 37, 22, 37),
+      margin: EdgeInsets.fromLTRB(22, 37, 22, 10),
       child: Column(
         children: <Widget>[
           body, //THIS IS THE PLACE DETAILS
