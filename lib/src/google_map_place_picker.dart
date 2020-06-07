@@ -359,10 +359,10 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
             onTap: (LatLng latlng) {
               provider.mapController.animateCamera(
                   CameraUpdate.newCameraPosition(
-                  CameraPosition(
-                    target: latlng,
-                    zoom: 19.0,
-                  )
+                      CameraPosition(
+                        target: latlng,
+                        zoom: 19.0,
+                      )
               ));
               _handleMapSelection(latlng, provider, context);
             },
@@ -492,7 +492,13 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
 
     bottomController.then((value) {
       provider.bottomScreenState = BottomScreenState.Closed;
-      provider.mapController.animateCamera(CameraUpdate.zoomOut());
+      provider.mapController.animateCamera(
+          CameraUpdate.newCameraPosition(
+            CameraPosition(
+                target: provider.cameraPosition.target,
+                zoom: provider.prevCameraPosition.zoom
+            ),
+      ));
     });
   }
 
@@ -661,8 +667,8 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
 
                     priceLevelToIcon(result.priceLevel), //ask tony to make these icons?
 
-                    Text(
-                      "category",
+                    placeCategory == null? Text("null") : Text(
+                      placeCategory,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -713,91 +719,64 @@ class _GoogleMapPlacePicker extends State<GoogleMapPlacePicker> {
     //initially price is null so three gray dollar signs
     var priceWidget = Row(
       mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
       children: <Widget>[
-        Icon(
-          Icons.attach_money,
-          color: Colors.black54,
-          size: _size,
-        ),
-        Icon(
-          Icons.attach_money,
-          color: Colors.black54,
-          size: _size,
-        ),
-        Icon(
-          Icons.attach_money,
-          color: Colors.black54,
-          size: _size,
-        )
+        _moneySignBuilder(_size, Colors.black54),
+        _moneySignBuilder(_size, Colors.black54),
+        _moneySignBuilder(_size, Colors.black54),
       ],
     );
 
     if (priceLevel == PriceLevel.free || priceLevel == PriceLevel.inexpensive) {
       priceWidget = Row(
         mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(
-            Icons.attach_money,
-            color: Colors.black,
-            size: _size,
-          ),
-          Icon(
-            Icons.attach_money,
-            color: Colors.black54,
-            size: _size,
-          ),
-          Icon(
-            Icons.attach_money,
-            color: Colors.black54,
-            size: _size,
-          )
+          _moneySignBuilder(_size, Colors.black),
+          _moneySignBuilder(_size, Colors.black54),
+          _moneySignBuilder(_size, Colors.black54),
         ],
       );
     } else if (priceLevel == PriceLevel.moderate || priceLevel == PriceLevel.expensive) {
       priceWidget = Row(
         mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(
-            Icons.attach_money,
-            color: Colors.black,
-            size: _size,
-          ),
-          Icon(
-            Icons.attach_money,
-            color: Colors.black,
-            size: _size,
-          ),
-          Icon(
-            Icons.attach_money,
-            color: Colors.black54,
-            size: _size,
-          )
+          _moneySignBuilder(_size, Colors.black),
+          _moneySignBuilder(_size, Colors.black),
+          _moneySignBuilder(_size, Colors.black54),
         ],
       );
     } else if (priceLevel == PriceLevel.veryExpensive){
       priceWidget = Row(
         mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          Icon(
-            Icons.attach_money,
-            color: Colors.black,
-            size: _size,
-          ),
-          Icon(
-            Icons.attach_money,
-            color: Colors.black,
-            size: _size,
-          ),
-          Icon(
-            Icons.attach_money,
-            color: Colors.black,
-            size: _size,
-          )
+          _moneySignBuilder(_size, Colors.black),
+          _moneySignBuilder(_size, Colors.black),
+          _moneySignBuilder(_size, Colors.black),
         ],
       );
     }
 
     return priceWidget;
+  }
+
+  Widget _moneySignBuilder(double size, Color color) {
+    return Container(
+      padding: EdgeInsets.all(0),
+        width: 6,
+        child: Text(
+         String.fromCharCode(Icons.attach_money.codePoint),
+        style: TextStyle(
+          fontFamily: Icons.attach_money.fontFamily,
+          package: Icons.attach_money.fontPackage,
+          fontSize: size,
+          color: color,
+          inherit: false,
+        )
+    ),
+      );
   }
 
   Widget _buildMapIcons(BuildContext context) {
